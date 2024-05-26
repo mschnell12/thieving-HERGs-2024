@@ -12,9 +12,54 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load-packages}
 library(tidyverse)
 library(readxl)
+library(lubridate)
 ```
 
 ```{r load-data}
 HERG_environment <- read_xlsx("data/thievingHERGnotes.xlsx", sheet = "environment")
 HERG_observations <- read_xlsx("data/thievingHERGnotes.xlsx", sheet = "observations")
+```
+
+```{r fix-time-environment}
+HERG_environment <- HERG_environment %>%
+  separate(col = time, into = c("dateWRONG","time"), sep = " ", convert = TRUE) %>%
+  mutate(dateWRONG = NULL) %>%
+  unite(datetime, c(date, time), sep = " ") %>%
+  mutate(datetime, ymd_hms(datetime)) %>%
+  mutate(datetime = NULL) %>%
+  rename(datetime = `ymd_hms(datetime)`) %>%
+  relocate(datetime, .before = temp)
+```
+
+```{r fix-time-observations}
+HERG_observations <- HERG_observations %>%
+  separate(col = time, into = c("dateWRONG","time"), sep = " ", convert = TRUE) %>%
+  mutate(dateWRONG = NULL) %>%
+  unite(datetime, c(date, time), sep = " ") %>%
+  mutate(datetime, ymd_hms(datetime)) %>%
+  mutate(datetime = NULL) %>%
+  rename(datetime = `ymd_hms(datetime)`) %>%
+  relocate(datetime, .before = original)
+```
+
+```{r tidy-environment}
+HERG_environment %>%
+  mutate(temp = na_if(temp, "none"))
+```
+
+```{r tidy-observations}
+HERG_observations <- HERG_observations %>%
+  mutate(across(c(thief,
+                  drop_ht_1,
+                  drop_ht_2,
+                  drop_ht_3,
+                  drop_ht_4, 
+                  substrate_1,
+                  substrate_2,
+                  substrate_3,
+                  substrate_4,
+                  distance_a,
+                  distance_b,
+                  distance_c),
+                na_if, "none"))
 ```
