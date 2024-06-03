@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readxl)
 library(lubridate)
+library(data.table)
 ```
 
 ```{r load-data}
@@ -40,26 +41,39 @@ HERG_observations <- HERG_observations %>%
   mutate(datetime = NULL) %>%
   rename(datetime = `ymd_hms(datetime)`) %>%
   relocate(datetime, .before = original)
+
 ```
 
 ```{r tidy-environment}
-HERG_environment %>%
-  mutate(temp = na_if(temp, "none"))
+HERG_environment <- HERG_environment %>%
+  mutate(temp = na_if(temp, "none")) %>%
+  mutate(date = as.Date(datetime)) %>%
+  mutate(time = as.ITime(datetime))
 ```
 
 ```{r tidy-observations}
 HERG_observations <- HERG_observations %>%
-  mutate(across(c(thief,
-                  drop_ht_1,
-                  drop_ht_2,
-                  drop_ht_3,
-                  drop_ht_4, 
-                  substrate_1,
-                  substrate_2,
-                  substrate_3,
-                  substrate_4,
-                  distance_a,
-                  distance_b,
-                  distance_c),
-                na_if, "none"))
+  mutate(thief = na_if(thief, "none"),
+         drop_ht_1 = na_if(drop_ht_1, "none"),
+         drop_ht_2 = na_if(drop_ht_2, "none"),
+         drop_ht_3 = na_if(drop_ht_3, "none"),
+         drop_ht_4 = na_if(drop_ht_4, "none"),
+         substrate_1 = na_if(substrate_1, "none"),
+         substrate_2 = na_if(substrate_2, "none"),
+         substrate_3 = na_if(substrate_3, "none"),
+         substrate_4 = na_if(substrate_4, "none"),
+         distance_a = na_if(distance_a, "none"),
+         distance_b = na_if(distance_b, "none"),
+         distance_c = na_if(distance_c, "none"))
+```
+
+```{r graph-gull-counts}
+HERG_environment %>%
+  select(date, time, HERG_A, HERG_J) %>%
+  pivot_longer(., cols = c(HERG_A, HERG_J), names_to = "age", values_to = "count") %>%
+  group_by(date, age) %>%
+  summarise(mean_count = mean(count)) %>%
+  ggplot(mapping = aes(date, mean_count, fill = age)) +
+  geom_col()+
+  scale_fill_viridis_d()
 ```
