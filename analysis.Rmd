@@ -14,6 +14,7 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 library(data.table)
+library(ggpattern)
 ```
 
 ```{r load-data}
@@ -95,12 +96,25 @@ HERG_environment %>%
   geom_col()
 ```
 
-```{r graph-total-stealing-events}
+```{r graph-total-stealing-events-unstandardized}
 HERG_observations %>%
   filter(thieves_A + thieves_J > 0) %>%
   group_by(date) %>%
   ggplot(mapping = aes(date, fill = original)) +
   geom_bar() +
+  scale_fill_viridis_d()
+```
+
+```{r graph-total-stealing-events-standardized}
+HERG_observations %>%
+  left_join(HERG_counts) %>%
+  filter(thieves_A + thieves_J > 0) %>%
+  filter(age_count == "HERG_A" & original == "A" |
+           age_count == "HERG_J" & original == "J") %>%
+  group_by(date, original) %>%
+  summarise(stealing_std = n()/mean_count) %>%
+  ggplot(mapping = aes(date, stealing_std, fill = original)) +
+  geom_col() +
   scale_fill_viridis_d()
 ```
 
@@ -130,4 +144,14 @@ HERG_observations %>%
   ggplot(mapping = aes(date, thieves_std, fill = age_thieves)) +
   geom_col() +
   scale_fill_viridis_d()
+```
+
+```{r filter-successful}
+HERG_observations %>% 
+  filter(stolen == "Y")
+```
+
+```{r}
+HERG_observations %>%
+  filter(thieves_A + thieves_J == 1)
 ```
