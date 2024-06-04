@@ -46,7 +46,10 @@ HERG_observations <- HERG_observations %>%
 
 ```{r tidy-environment}
 HERG_environment <- HERG_environment %>%
-  mutate(temp = na_if(temp, "none")) %>%
+  mutate(people_path = na_if(people_path, "not_taken")) %>%
+  mutate(people_path = as.numeric(people_path)) %>%
+  mutate(people_bar = na_if(people_bar, "not_taken")) %>%
+  mutate(people_bar = as.numeric(people_bar)) %>%
   mutate(date = as.Date(datetime)) %>%
   mutate(time = as.ITime(datetime))
 ```
@@ -76,4 +79,13 @@ HERG_environment %>%
   ggplot(mapping = aes(date, mean_count, fill = age)) +
   geom_col()+
   scale_fill_viridis_d()
+```
+```{r graph-people-counts}
+HERG_environment %>%
+  select(date, time, people_path, people_bar) %>%
+  pivot_longer(., cols = c(people_path, people_bar), names_to = "location", values_to = "count") %>%
+  group_by(date, location) %>%
+  summarise(mean_count = mean(count, na.rm = TRUE)) %>%
+  ggplot(mapping = aes(date, mean_count, fill = location)) +
+  geom_col()
 ```
