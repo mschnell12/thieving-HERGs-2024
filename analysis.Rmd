@@ -99,3 +99,13 @@ HERG_observations %>%
   geom_bar() +
   scale_fill_viridis_d()
 ```
+
+```{r graph-thieves-unstandardized}
+HERG_observations %>%
+  filter(thieves_A + thieves_J > 0) %>%
+  pivot_longer(., cols = c(thieves_A, thieves_J), names_to = "age", values_to = "thieves_total") %>%
+  group_by(date) %>%
+  ggplot(mapping = aes(date, thieves_total, fill = age)) +
+  geom_col() +
+  scale_fill_viridis_d()
+```
