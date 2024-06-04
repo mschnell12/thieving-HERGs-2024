@@ -40,8 +40,9 @@ HERG_observations <- HERG_observations %>%
   mutate(datetime, ymd_hms(datetime)) %>%
   mutate(datetime = NULL) %>%
   rename(datetime = `ymd_hms(datetime)`) %>%
-  relocate(datetime, .before = original)
-
+  relocate(datetime, .before = original) %>%
+  mutate(date = as.Date(datetime)) %>%
+  mutate(time = as.ITime(datetime))
 ```
 
 ```{r tidy-environment}
@@ -88,4 +89,13 @@ HERG_environment %>%
   summarise(mean_count = mean(count, na.rm = TRUE)) %>%
   ggplot(mapping = aes(date, mean_count, fill = location)) +
   geom_col()
+```
+
+```{r graph-total-stealing-events}
+HERG_observations %>%
+  filter(thieves_A + thieves_J > 0) %>%
+  group_by(date) %>%
+  ggplot(mapping = aes(date, fill = original)) +
+  geom_bar() +
+  scale_fill_viridis_d()
 ```
