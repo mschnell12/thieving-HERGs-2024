@@ -82,7 +82,14 @@ HERG_counts <- HERG_environment %>%
 HERG_counts %>%
   ggplot(mapping = aes(date, mean_count, fill = age_count)) +
   geom_col()+
-  scale_fill_viridis_d()
+  scale_fill_manual(values = c("HERG_A" = "darkseagreen2",
+                               "HERG_J" = "darkseagreen4"),
+                    labels = c("HERG_A" = "Adult",
+                               "HERG_J" = "Juvenile")) +
+  labs(x = "Date",
+       y = "Count (Average)",
+       title = "Count of Herring Gulls on the Bar",
+       fill = "Age Class")
 ```
 ```{r graph-people-counts}
 HERG_environment %>%
@@ -93,7 +100,15 @@ HERG_environment %>%
   group_by(date, location) %>%
   summarise(mean_count = mean(count, na.rm = TRUE)) %>%
   ggplot(mapping = aes(date, mean_count, fill = location)) +
-  geom_col()
+  geom_col() +
+  scale_fill_manual(values = c("people_bar" = "darkorange2",
+                               "people_path" = "darkorange4"),
+                    labels = c("people_bar" = "Bar",
+                               "people_path" = "Path")) +
+labs(x = "Date",
+       y = "Mean # of Humans",
+       title = "Mean Count of Humans on the Bar",
+       fill = "Location")
 ```
 
 ```{r graph-total-stealing-events-unstandardized}
@@ -102,7 +117,14 @@ HERG_observations %>%
   group_by(date) %>%
   ggplot(mapping = aes(date, fill = original)) +
   geom_bar() +
-  scale_fill_viridis_d()
+  scale_fill_manual(values = c("A" = "lightgoldenrod",
+                               "J" = "lightgoldenrod4"),
+                    labels = c("A" = "Adult",
+                               "J" = "Juvenile")) +
+labs(x = "Date",
+       y = "# Victims",
+       title = "Herring Gull Victims",
+       fill = "Age Class of Victims")
 ```
 
 ```{r graph-total-stealing-events-standardized}
@@ -115,7 +137,15 @@ HERG_observations %>%
   summarise(stealing_std = n()/mean_count) %>%
   ggplot(mapping = aes(date, stealing_std, fill = original)) +
   geom_col() +
-  scale_fill_viridis_d()
+  scale_fill_manual(values = c("A" = "lightgoldenrod",
+                               "J" = "lightgoldenrod4"),
+                    labels = c("A" = "Adult",
+                               "J" = "Juvenile")) +
+labs(x = "Date",
+       y = "# Victims / Mean # Individuals",
+       title = "Herring Gull Victims",
+       subtitle = "Standardized by Mean Counts",
+       fill = "Age Class of Victims")
 ```
 
 ```{r graph-thieves-unstandardized}
@@ -127,7 +157,14 @@ HERG_observations %>%
   group_by(date) %>%
   ggplot(mapping = aes(date, thieves_total, fill = age_thieves)) +
   geom_col() +
-  scale_fill_viridis_d()
+  scale_fill_manual(values = c("thieves_A" = "lightblue",
+                               "thieves_J" = "lightblue4"),
+                    labels = c("thieves_A" = "Adult",
+                               "thieves_J" = "Juvenile")) +
+  labs(x = "Date",
+       y = "Total # Thieves",
+       title = "Herring Gull Thieves",
+       fill = "Age Class of Thieves")
 ```
 
 ```{r graph-thieves-standardized}
@@ -143,7 +180,15 @@ HERG_observations %>%
   summarise(thieves_std = thieves/mean_count) %>%
   ggplot(mapping = aes(date, thieves_std, fill = age_thieves)) +
   geom_col() +
-  scale_fill_viridis_d()
+  scale_fill_manual(values = c("thieves_A" = "lightblue",
+                               "thieves_J" = "lightblue4"),
+                    labels = c("thieves_A" = "Adult",
+                               "thieves_J" = "Juvenile")) +
+  labs(x = "Date",
+       y = "# Thieves / Mean # Individuals",
+       title = "Herring Gull Thieves",
+       subtitle = "Standardized by Mean Counts",
+       fill = "Age Class of Thieves")
 ```
 
 ```{r filter-successful}
@@ -154,4 +199,69 @@ HERG_observations %>%
 ```{r}
 HERG_observations %>%
   filter(thieves_A + thieves_J == 1)
+```
+
+```{r graph-incidence-of-stealing-attempts}
+HERG_observations %>%
+  mutate(attempt = case_when(thieves_A + thieves_J > 0 ~ "Y",
+                             thieves_A + thieves_J == 0 ~ "N")) %>%
+  group_by(date) %>%
+  ggplot(mapping = aes(date, fill = attempt)) +
+  geom_bar() +
+  scale_fill_manual(values = c("N" = "mediumpurple2",
+                               "Y" = "mediumpurple4"),
+                    labels = c("N" = "No",
+                               "Y" = "Yes")) +
+  labs(x = "Date",
+       y = "# Foraging Events",
+       title = "Incidence of Stealing Attempts during Foraging Events",
+       fill = "Stealing Attempt?")
+```
+
+```{r graph-success}
+
+# excluded one observation in which I lost track of prey (not sure if it was stolen or not)
+# one observation of N,S: converted to N because in this case I'm looking at outcomes for thieves
+
+HERG_successful <- HERG_observations %>%
+  filter(thieves_A + thieves_J > 0,
+         stolen != "unknown") %>%
+  mutate(stolen = case_when(stolen == "N,S" ~ "N",
+                            TRUE ~ stolen)) %>%
+  mutate(for_join = "SUCCESSFUL",
+         thief_new = thief,
+         count_thieves = case_when(stolen == "N" ~ 0,
+                                   stolen == "Y" ~ 1)) %>%
+  unite(for_join, for_join, thief, sep = "_", remove = FALSE)
+  
+HERG_unsuccessful <- HERG_observations %>%
+  filter(thieves_A + thieves_J > 0,
+         stolen != "unknown") %>%
+  mutate(stolen = case_when(stolen == "N,S" ~ "N",
+                            TRUE ~ stolen)) %>%
+  mutate(for_join = "UNSUCCESSFUL",
+         thief_color = thief,
+         count_thieves = case_when(stolen == "N" ~ thieves_A + thieves_J,
+                                   stolen == "Y" ~ thieves_A + thieves_J - 1))
+
+HERG_new <- full_join(HERG_successful, HERG_unsuccessful)
+
+
+HERG_new %>%
+  group_by(date) %>%
+  filter(for_join != "SUCCESSFUL_NA") %>%
+  ggplot(mapping = aes(date, count_thieves, fill = for_join)) +
+  geom_col() +
+  scale_y_continuous(breaks = c(2, 4, 6, 8, 10), limits = c(0,10)) +
+  scale_fill_manual(values = c("SUCCESSFUL_A" = "cadetblue2",
+                               "SUCCESSFUL_J" = "cadetblue4",
+                               "UNSUCCESSFUL" = "black"),
+                    labels = c("SUCCESSFUL_A" = "Successful Adult",
+                               "SUCCESSFUL_J" = "Successful Juvenile",
+                               "UNSUCCESSFUL" = "Unsuccessful")) +
+  labs(x = "Date",
+       y = "# Wannabe Thieves",
+       title = "Success Rates of Stealing Attempts",
+       fill = "Outcome")
+
 ```
