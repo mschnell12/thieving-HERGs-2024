@@ -32,19 +32,6 @@ HERG_environment <- HERG_environment %>%
   relocate(datetime, .before = temp)
 ```
 
-```{r fix-time-observations}
-HERG_observations <- HERG_observations %>%
-  separate(col = time, into = c("dateWRONG","time"), sep = " ", convert = TRUE) %>%
-  mutate(dateWRONG = NULL) %>%
-  unite(datetime, c(date, time), sep = " ") %>%
-  mutate(datetime, ymd_hms(datetime)) %>%
-  mutate(datetime = NULL) %>%
-  rename(datetime = `ymd_hms(datetime)`) %>%
-  relocate(datetime, .before = original) %>%
-  mutate(date = as.Date(datetime)) %>%
-  mutate(time = as.ITime(datetime))
-```
-
 ```{r tidy-environment}
 HERG_environment <- HERG_environment %>%
   mutate(people_path = na_if(people_path, "not_taken")) %>%
@@ -56,6 +43,17 @@ HERG_environment <- HERG_environment %>%
 ```
 
 ```{r tidy-observations}
+HERG_observations <- HERG_observations %>%
+  separate(col = time, into = c("dateWRONG","time"), sep = " ", convert = TRUE) %>%
+  mutate(dateWRONG = NULL) %>%
+  unite(datetime, c(date, time), sep = " ") %>%
+  mutate(datetime, ymd_hms(datetime)) %>%
+  mutate(datetime = NULL) %>%
+  rename(datetime = `ymd_hms(datetime)`) %>%
+  relocate(datetime, .before = original) %>%
+  mutate(date = as.Date(datetime)) %>%
+  mutate(time = as.ITime(datetime))
+
 HERG_observations <- HERG_observations %>%
   mutate(thief = na_if(thief, "none"),
          drop_ht_1 = na_if(drop_ht_1, "none"),
@@ -72,19 +70,25 @@ HERG_observations <- HERG_observations %>%
 ```
 
 ```{r graph-gull-counts}
-HERG_environment %>%
+HERG_counts <- HERG_environment %>%
   select(date, time, HERG_A, HERG_J) %>%
-  pivot_longer(., cols = c(HERG_A, HERG_J), names_to = "age", values_to = "count") %>%
-  group_by(date, age) %>%
-  summarise(mean_count = mean(count)) %>%
-  ggplot(mapping = aes(date, mean_count, fill = age)) +
+  pivot_longer(., cols = c(HERG_A, HERG_J),
+               names_to = "age_count",
+               values_to = "count") %>%
+  group_by(date, age_count) %>%
+  summarise(mean_count = mean(count))
+
+HERG_counts %>%
+  ggplot(mapping = aes(date, mean_count, fill = age_count)) +
   geom_col()+
   scale_fill_viridis_d()
 ```
 ```{r graph-people-counts}
 HERG_environment %>%
   select(date, time, people_path, people_bar) %>%
-  pivot_longer(., cols = c(people_path, people_bar), names_to = "location", values_to = "count") %>%
+  pivot_longer(., cols = c(people_path, people_bar),
+               names_to = "location",
+               values_to = "count") %>%
   group_by(date, location) %>%
   summarise(mean_count = mean(count, na.rm = TRUE)) %>%
   ggplot(mapping = aes(date, mean_count, fill = location)) +
@@ -103,9 +107,27 @@ HERG_observations %>%
 ```{r graph-thieves-unstandardized}
 HERG_observations %>%
   filter(thieves_A + thieves_J > 0) %>%
-  pivot_longer(., cols = c(thieves_A, thieves_J), names_to = "age", values_to = "thieves_total") %>%
+  pivot_longer(., cols = c(thieves_A, thieves_J),
+               names_to = "age_thieves",
+               values_to = "thieves_total") %>%
   group_by(date) %>%
-  ggplot(mapping = aes(date, thieves_total, fill = age)) +
+  ggplot(mapping = aes(date, thieves_total, fill = age_thieves)) +
+  geom_col() +
+  scale_fill_viridis_d()
+```
+
+```{r graph-thieves-standardized}
+HERG_observations %>%
+  left_join(HERG_counts) %>%
+  filter(thieves_A + thieves_J > 0) %>%
+  pivot_longer(., cols = c(thieves_A, thieves_J),
+               names_to = "age_thieves",
+               values_to = "thieves") %>%
+  filter(age_count == "HERG_A" & age_thieves == "thieves_A" |
+           age_count == "HERG_J" & age_thieves == "thieves_J") %>%
+  group_by(date, age_thieves) %>%
+  summarise(thieves_std = thieves/mean_count) %>%
+  ggplot(mapping = aes(date, thieves_std, fill = age_thieves)) +
   geom_col() +
   scale_fill_viridis_d()
 ```
