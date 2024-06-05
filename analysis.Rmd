@@ -213,54 +213,56 @@ HERG_observations %>%
                     labels = c("N" = "No",
                                "Y" = "Yes")) +
   labs(x = "Date",
-       y = "# Foraging Events",
+       y = "# Foraging Events Observed",
        title = "Incidence of Stealing Attempts during Foraging Events",
        fill = "Stealing Attempt?")
 ```
 
-```{r graph-success}
+
+``` {r mutate-for-success-graph}
 
 # excluded one observation in which I lost track of prey (not sure if it was stolen or not)
 # one observation of N,S: converted to N because in this case I'm looking at outcomes for thieves
 
-HERG_successful <- HERG_observations %>%
+HERG_new <- HERG_observations %>%
   filter(thieves_A + thieves_J > 0,
          stolen != "unknown") %>%
   mutate(stolen = case_when(stolen == "N,S" ~ "N",
                             TRUE ~ stolen)) %>%
-  mutate(for_join = "SUCCESSFUL",
-         thief_new = thief,
-         count_thieves = case_when(stolen == "N" ~ 0,
-                                   stolen == "Y" ~ 1)) %>%
-  unite(for_join, for_join, thief, sep = "_", remove = FALSE)
-  
-HERG_unsuccessful <- HERG_observations %>%
-  filter(thieves_A + thieves_J > 0,
-         stolen != "unknown") %>%
-  mutate(stolen = case_when(stolen == "N,S" ~ "N",
-                            TRUE ~ stolen)) %>%
-  mutate(for_join = "UNSUCCESSFUL",
-         thief_color = thief,
-         count_thieves = case_when(stolen == "N" ~ thieves_A + thieves_J,
-                                   stolen == "Y" ~ thieves_A + thieves_J - 1))
+  mutate(successful_A = case_when(stolen == "N" ~ 0,
+                                  stolen == "Y" & thief == "A" ~ 1,
+                                  stolen == "Y" & thief == "J" ~ 0),
+         unsuccessful_A = case_when(stolen == "N" ~ thieves_A,
+                                    stolen == "Y" & thief == "A" ~ thieves_A - 1,
+                                    stolen == "Y" & thief == "J" ~ thieves_A),
+         successful_J = case_when(stolen == "N" ~ 0,
+                                  stolen == "Y" & thief == "J" ~ 1,
+                                  stolen == "Y" & thief == "A" ~ 0),
+         unsuccessful_J = case_when(stolen == "N" ~ thieves_J,
+                                    stolen == "Y" & thief == "J" ~ thieves_J - 1,
+                                    stolen == "Y" & thief == "A" ~ thieves_J)) %>%
+  pivot_longer(., cols = c(successful_A, unsuccessful_A, successful_J, unsuccessful_J),
+               names_to = "outcome",
+               values_to = "count_outcomes")
+```
 
-HERG_new <- full_join(HERG_successful, HERG_unsuccessful)
-
+```{r graph-success}
 
 HERG_new %>%
   group_by(date) %>%
-  filter(for_join != "SUCCESSFUL_NA") %>%
-  ggplot(mapping = aes(date, count_thieves, fill = for_join)) +
+  ggplot(mapping = aes(date, count_outcomes, fill = outcome)) +
   geom_col() +
   scale_y_continuous(breaks = c(2, 4, 6, 8, 10), limits = c(0,10)) +
-  scale_fill_manual(values = c("SUCCESSFUL_A" = "cadetblue2",
-                               "SUCCESSFUL_J" = "cadetblue4",
-                               "UNSUCCESSFUL" = "black"),
-                    labels = c("SUCCESSFUL_A" = "Successful Adult",
-                               "SUCCESSFUL_J" = "Successful Juvenile",
-                               "UNSUCCESSFUL" = "Unsuccessful")) +
+  scale_fill_manual(values = c("successful_A" = "skyblue1",
+                               "successful_J" = "dodgerblue4",
+                               "unsuccessful_A" = "gray70",
+                               "unsuccessful_J" = "gray30"),
+                    labels = c("successful_A" = "Successful Adult",
+                               "successful_J" = "Successful Juvenile",
+                               "unsuccessful_A" = "Unsuccessful Adult",
+                               "unsuccessful_J" = "Unsuccessful Juvenile")) +
   labs(x = "Date",
-       y = "# Wannabe Thieves",
+       y = "# Attempted Thieves",
        title = "Success Rates of Stealing Attempts",
        fill = "Outcome")
 
