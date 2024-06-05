@@ -82,8 +82,8 @@ HERG_counts <- HERG_environment %>%
 HERG_counts %>%
   ggplot(mapping = aes(date, mean_count, fill = age_count)) +
   geom_col()+
-  scale_fill_manual(values = c("HERG_A" = "darkseagreen2",
-                               "HERG_J" = "darkseagreen4"),
+  scale_fill_manual(values = c("HERG_A" = "darkolivegreen3",
+                               "HERG_J" = "darkolivegreen"),
                     labels = c("HERG_A" = "Adult",
                                "HERG_J" = "Juvenile")) +
   labs(x = "Date",
@@ -103,7 +103,7 @@ HERG_environment %>%
   geom_col() +
   scale_fill_manual(values = c("people_bar" = "darkorange2",
                                "people_path" = "darkorange4"),
-                    labels = c("people_bar" = "Bar",
+                    labels = c("people_bar" = "Non-Path",
                                "people_path" = "Path")) +
 labs(x = "Date",
        y = "Mean # of Humans",
@@ -180,8 +180,8 @@ HERG_observations %>%
   summarise(thieves_std = thieves/mean_count) %>%
   ggplot(mapping = aes(date, thieves_std, fill = age_thieves)) +
   geom_col() +
-  scale_fill_manual(values = c("thieves_A" = "lightblue",
-                               "thieves_J" = "lightblue4"),
+  scale_fill_manual(values = c("thieves_A" = "darkslategray3",
+                               "thieves_J" = "darkslategray"),
                     labels = c("thieves_A" = "Adult",
                                "thieves_J" = "Juvenile")) +
   labs(x = "Date",
@@ -247,14 +247,13 @@ HERG_new <- HERG_observations %>%
 ```
 
 ```{r graph-success}
-
 HERG_new %>%
   group_by(date) %>%
   ggplot(mapping = aes(date, count_outcomes, fill = outcome)) +
   geom_col() +
   scale_y_continuous(breaks = c(2, 4, 6, 8, 10), limits = c(0,10)) +
-  scale_fill_manual(values = c("successful_A" = "skyblue1",
-                               "successful_J" = "dodgerblue4",
+  scale_fill_manual(values = c("successful_A" = "steelblue2",
+                               "successful_J" = "steelblue4",
                                "unsuccessful_A" = "gray70",
                                "unsuccessful_J" = "gray30"),
                     labels = c("successful_A" = "Successful Adult",
@@ -265,5 +264,4 @@ HERG_new %>%
        y = "# Attempted Thieves",
        title = "Success Rates of Stealing Attempts",
        fill = "Outcome")
-
 ```
