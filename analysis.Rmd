@@ -87,7 +87,7 @@ HERG_counts %>%
                     labels = c("HERG_A" = "Adult",
                                "HERG_J" = "Juvenile")) +
   labs(x = "Date",
-       y = "Count (Average)",
+       y = "Mean # of Herring Gulls",
        title = "Count of Herring Gulls on the Bar",
        fill = "Age Class")
 ```
